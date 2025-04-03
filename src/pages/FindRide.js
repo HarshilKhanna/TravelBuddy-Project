@@ -6,6 +6,7 @@ function FindRide() {
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [requestedRides, setRequestedRides] = useState(new Set());
   const [searchParams, setSearchParams] = useState({
     from: '',
     to: '',
@@ -33,6 +34,16 @@ function FindRide() {
 
       const data = await response.json();
       setRides(data);
+      
+      // Check which rides the user has already requested
+      const requestedIds = new Set();
+      data.forEach(ride => {
+        if (ride.requests?.some(request => request.passenger.toString() === localStorage.getItem('userId'))) {
+          requestedIds.add(ride._id);
+        }
+      });
+      setRequestedRides(requestedIds);
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching rides:', err);
@@ -45,6 +56,39 @@ function FindRide() {
   useEffect(() => {
     fetchRides();
   }, []);
+
+  const handleRequestRide = async (rideId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please login to request a ride');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/request`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to request ride');
+      }
+
+      // Add the ride to requested rides
+      setRequestedRides(prev => new Set([...prev, rideId]));
+
+      // Show success message
+      setError(null);
+    } catch (err) {
+      console.error('Error requesting ride:', err);
+      setError(err.message || 'An error occurred while requesting the ride');
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -142,7 +186,13 @@ function FindRide() {
                   <span>{ride.vehicle}</span>
                 </div>
               </div>
-              <button className="request-button">Request Ride</button>
+              <button 
+                className={`request-button ${requestedRides.has(ride._id) ? 'disabled' : ''}`}
+                onClick={() => handleRequestRide(ride._id)}
+                disabled={requestedRides.has(ride._id)}
+              >
+                {requestedRides.has(ride._id) ? 'Requested' : 'Request Ride'}
+              </button>
             </div>
           ))}
         </div>
