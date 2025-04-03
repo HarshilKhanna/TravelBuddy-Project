@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 // Import routes
 const authRoutes = require('./routes/auth');
 const rideRoutes = require('./routes/rides');
+const notificationRoutes = require('./routes/notifications');
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

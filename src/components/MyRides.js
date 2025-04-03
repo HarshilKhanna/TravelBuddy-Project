@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { FaCar, FaUserFriends, FaUser, FaRegBell, FaSearch, FaExclamationTriangle, FaTimes, FaCalendarAlt, FaClock, FaMoneyBillWave, FaArrowRight, FaPlus, FaEdit } from 'react-icons/fa';
 import { FaTicketAlt } from 'react-icons/fa';
+import './MyRides.css';
 
 // Add ConfirmationPopup component
 const ConfirmationPopup = ({ message, onConfirm, onCancel }) => {
@@ -137,7 +138,7 @@ const EditRidePopup = ({ ride, onSave, onCancel }) => {
 
 const MyRides = () => {
   const [activeTab, setActiveTab] = React.useState('offered');
-  const [rides, setRides] = React.useState([]);
+  const [rides, setRides] = React.useState({ offered: [], booked: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const [showConfirmation, setShowConfirmation] = React.useState(false);
@@ -145,11 +146,6 @@ const MyRides = () => {
   const [successMessage, setSuccessMessage] = React.useState(null);
   const [showEditPopup, setShowEditPopup] = React.useState(false);
   const [rideToEdit, setRideToEdit] = React.useState(null);
-
-  // Add function to format status text
-  const formatStatus = (status) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
 
   const fetchRides = async () => {
     try {
@@ -171,9 +167,7 @@ const MyRides = () => {
       }
 
       const data = await response.json();
-      // Filter out cancelled rides
-      const activeRides = data.filter(ride => ride.status !== 'cancelled');
-      setRides(activeRides);
+      setRides(data);
       setError(null);
     } catch (err) {
       console.error('Error fetching rides:', err);
@@ -185,6 +179,18 @@ const MyRides = () => {
 
   React.useEffect(() => {
     fetchRides();
+
+    // Add event listener for rideAccepted event
+    const handleRideAccepted = () => {
+      fetchRides();
+    };
+
+    window.addEventListener('rideAccepted', handleRideAccepted);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('rideAccepted', handleRideAccepted);
+    };
   }, []);
 
   const handleCancelClick = (ride) => {
@@ -266,11 +272,12 @@ const MyRides = () => {
 
       setSuccessMessage('Ride updated successfully');
       // Update the rides list with the updated ride
-      setRides(prevRides => 
-        prevRides.map(ride => 
+      setRides(prevRides => ({
+        ...prevRides,
+        offered: prevRides.offered.map(ride => 
           ride._id === rideToEdit._id ? data.ride : ride
         )
-      );
+      }));
     } catch (err) {
       console.error('Error updating ride:', err);
       setError(err.message || 'An error occurred while updating the ride');
@@ -284,6 +291,19 @@ const MyRides = () => {
   const handleEditCancel = () => {
     setShowEditPopup(false);
     setRideToEdit(null);
+  };
+
+  const formatStatus = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
@@ -392,13 +412,13 @@ const MyRides = () => {
             <h2>Rides You've Offered</h2>
             <p className="section-subtitle">Manage the rides you're offering to others</p>
             
-            {rides.length === 0 ? (
+            {rides.offered.length === 0 ? (
               <div className="no-rides">
                 <p>You haven't offered any rides yet.</p>
               </div>
             ) : (
               <div className="rides-list">
-                {rides.map(ride => (
+                {rides.offered.map(ride => (
                   <div key={ride._id} className="ride-item">
                     <div className="ride-info">
                       <h3>{ride.from} to {ride.to}</h3>
@@ -437,12 +457,33 @@ const MyRides = () => {
             <h2>Rides You've Booked</h2>
             <p className="section-subtitle">View and manage your booked rides</p>
             
-            <div className="no-rides">
-              <p>You haven't booked any rides yet.</p>
-              <Link to="/find-ride" className="find-ride-link">
-                Find a Ride
-              </Link>
-            </div>
+            {rides.booked.length === 0 ? (
+              <div className="no-rides">
+                <p>You haven't booked any rides yet.</p>
+                <Link to="/find-ride" className="find-ride-link">
+                  Find a Ride
+                </Link>
+              </div>
+            ) : (
+              <div className="rides-list">
+                {rides.booked.map(ride => (
+                  <div key={ride._id} className="ride-item">
+                    <div className="ride-info">
+                      <h3>{ride.from} to {ride.to}</h3>
+                      <p className="ride-date">{new Date(ride.date).toLocaleDateString()} - {ride.time}</p>
+                      <p className="ride-details">
+                        Price: ₹{ride.price}
+                      </p>
+                      <p className="ride-vehicle">Vehicle: {ride.vehicle}</p>
+                      <p className="ride-driver">Driver: {ride.driver.name}</p>
+                    </div>
+                    <div className="ride-status">
+                      <span className={`status-badge ${ride.status}`}>{formatStatus(ride.status)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, useLocation, useNavigate, Navigate } from "react-router-dom";
-import { FaCar, FaBell, FaUser, FaMapMarkerAlt, FaSearch, FaUserFriends, FaCog, FaRegBell, FaEnvelope, FaPhone } from "react-icons/fa";
+import { FaCar, FaBell, FaUser, FaMapMarkerAlt, FaSearch, FaUserFriends, FaCog, FaRegBell, FaEnvelope, FaPhone, FaEdit, FaTimes } from "react-icons/fa";
 import "./App.css";
 import Login from './components/Login';
 import Register from './components/Register';
@@ -122,6 +122,7 @@ const FindRide = () => {
   const [rides, setRides] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+  const [requestedRides, setRequestedRides] = React.useState(new Set());
   const [searchParams, setSearchParams] = React.useState({
     from: '',
     to: '',
@@ -137,24 +138,84 @@ const FindRide = () => {
         throw new Error('Please login to view rides');
       }
 
-      const response = await fetch('http://localhost:5000/api/rides/available', {
+      // Fetch available rides
+      const ridesResponse = await fetch('http://localhost:5000/api/rides/available', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) {
+      if (!ridesResponse.ok) {
         throw new Error('Failed to fetch rides');
       }
 
-      const data = await response.json();
-      setRides(data);
+      const ridesData = await ridesResponse.json();
+
+      // Fetch user's sent requests
+      const requestsResponse = await fetch('http://localhost:5000/api/rides/requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!requestsResponse.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      const requestsData = await requestsResponse.json();
+      
+      // Get IDs of rides that user has already requested or been rejected from
+      const requestedRideIds = new Set(
+        requestsData.sent
+          .filter(ride => ride.requests.some(req => 
+            req.status === 'pending' || req.status === 'rejected'
+          ))
+          .map(ride => ride._id)
+      );
+
+      // Filter out rides with 0 seats and rides that user has already requested or been rejected from
+      const availableRides = ridesData.filter(ride => 
+        ride.availableSeats > 0 && !requestedRideIds.has(ride._id)
+      );
+
+      setRides(availableRides);
       setError(null);
     } catch (err) {
       console.error('Error fetching rides:', err);
       setError(err.message || 'Failed to load rides');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestRide = async (rideId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please login to request a ride');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/request`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to request ride');
+      }
+
+      // Add the ride to requested rides and remove it from available rides
+      setRequestedRides(prev => new Set([...prev, rideId]));
+      setRides(prevRides => prevRides.filter(ride => ride._id !== rideId));
+      setError(null);
+    } catch (err) {
+      console.error('Error requesting ride:', err);
+      setError(err.message || 'An error occurred while requesting the ride');
     }
   };
 
@@ -292,7 +353,12 @@ const FindRide = () => {
                       <span>{ride.driver.name}</span>
                     </div>
                   </div>
-                  <button className="view-details-button">Request to Join</button>
+                  <button 
+                    className="view-details-button"
+                    onClick={() => handleRequestRide(ride._id)}
+                  >
+                    Request to Join
+                  </button>
                 </div>
               ))}
             </div>
@@ -654,6 +720,87 @@ const Navigation = () => {
 };
 
 const Notifications = () => {
+  const [notifications, setNotifications] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [isFetching, setIsFetching] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const fetchNotifications = React.useCallback(async () => {
+    if (isFetching || isDeleting) return;
+    
+    try {
+      setIsFetching(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view notifications');
+      }
+
+      const response = await fetch('http://localhost:5000/api/notifications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+
+      const data = await response.json();
+      setNotifications(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setError(err.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+      setIsFetching(false);
+    }
+  }, []);
+
+  const markAsRead = async (notificationId) => {
+    if (isDeleting) return;
+    
+    try {
+      setIsDeleting(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to mark notifications as read');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to mark notification as read');
+      }
+
+      // Remove the notification from the state immediately
+      setNotifications(prevNotifications => 
+        prevNotifications.filter(notification => notification._id !== notificationId)
+      );
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+      setError(err.message || 'An error occurred while marking the notification as read');
+      // If there's an error, refresh the notifications list
+      await fetchNotifications();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Only fetch notifications when the component mounts
+  React.useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   return (
     <div className="dashboard-layout">
       <aside className="dashboard-sidebar">
@@ -687,28 +834,37 @@ const Notifications = () => {
         <div className="notifications-card">
           <h2>Recent Notifications</h2>
           
-          <div className="notifications-list">
-            <div className="notification-item">
-              <div className="notification-content">
-                <h3>New Ride Request</h3>
-                <p>Harshil Khanna requested a ride to Bangalore</p>
-              </div>
-              <button className="view-btn">View</button>
+          {loading ? (
+            <div className="loading">Loading notifications...</div>
+          ) : error ? (
+            <div className="error">{error}</div>
+          ) : notifications.length === 0 ? (
+            <div className="no-notifications">
+              <FaBell className="no-notifications-icon" />
+              <p>No new notifications</p>
             </div>
-
-            <div className="notification-item">
-              <div className="notification-content">
-                <h3>Ride Confirmed</h3>
-                <p>Your ride to Bangalore has been confirmed</p>
-              </div>
-              <button className="view-btn">View</button>
+          ) : (
+            <div className="notifications-list">
+              {notifications.map(notification => (
+                <div key={notification._id} className="notification-item">
+                  <div className="notification-content">
+                    <h3>{notification.title}</h3>
+                    <p>{notification.message}</p>
+                    <span className="notification-time">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <button 
+                    className={`view-btn ${isDeleting ? 'disabled' : ''}`}
+                    onClick={() => markAsRead(notification._id)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Mark as Read'}
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <div className="no-notifications">
-            <FaBell className="no-notifications-icon" />
-            <p>No new notifications</p>
-          </div>
+          )}
         </div>
       </main>
     </div>
@@ -916,6 +1072,226 @@ const Profile = () => {
 
 const Requests = () => {
   const [activeTab, setActiveTab] = React.useState('incoming');
+  const [requests, setRequests] = React.useState({ incoming: [], sent: [] });
+  const [rides, setRides] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [successPopup, setSuccessPopup] = React.useState('');
+
+  const fetchRequests = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view requests');
+      }
+
+      const response = await fetch('http://localhost:5000/api/rides/requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      const data = await response.json();
+      setRequests(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+      setError(err.message || 'Failed to load requests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRides = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view rides');
+      }
+
+      // Fetch available rides
+      const ridesResponse = await fetch('http://localhost:5000/api/rides/available', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!ridesResponse.ok) {
+        throw new Error('Failed to fetch rides');
+      }
+
+      const ridesData = await ridesResponse.json();
+
+      // Fetch user's sent requests
+      const requestsResponse = await fetch('http://localhost:5000/api/rides/requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!requestsResponse.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      const requestsData = await requestsResponse.json();
+      
+      // Get IDs of rides that user has already requested or been rejected from
+      const requestedRideIds = new Set(
+        requestsData.sent
+          .filter(ride => ride.requests.some(req => 
+            req.status === 'pending' || req.status === 'rejected'
+          ))
+          .map(ride => ride._id)
+      );
+
+      // Filter out rides with 0 seats and rides that user has already requested or been rejected from
+      const availableRides = ridesData.filter(ride => 
+        ride.availableSeats > 0 && !requestedRideIds.has(ride._id)
+      );
+
+      setRides(availableRides);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching rides:', err);
+      setError(err.message || 'Failed to load rides');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRequests();
+    fetchRides();
+  }, []);
+
+  const handleAccept = async (rideId, requestId) => {
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to accept requests');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/requests/${requestId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to accept request');
+      }
+
+      const result = await response.json();
+      
+      // Update the ride in the incoming requests list
+      setRequests(prevRequests => {
+        if (!prevRequests || !prevRequests.incoming) {
+          return { incoming: [], sent: [] };
+        }
+        return {
+          ...prevRequests,
+          incoming: prevRequests.incoming.map(ride => {
+            if (ride._id === rideId) {
+              return {
+                ...ride,
+                requests: ride.requests.map(req => 
+                  req._id === requestId ? { ...req, status: 'accepted' } : req
+                )
+              };
+            }
+            return ride;
+          })
+        };
+      });
+
+      // If available seats become 0, remove the ride from available rides
+      if (result.ride.availableSeats === 0) {
+        setRides(prevRides => prevRides.filter(ride => ride._id !== rideId));
+      }
+
+      // Show success message
+      setError(null);
+      setSuccessPopup({ message: 'Ride Booked successfully', type: 'success' });
+
+      // Refresh both requests and rides data
+      await Promise.all([
+        fetchRequests(),
+        fetchRides()
+      ]);
+
+      // Dispatch an event to notify MyRides component to refresh
+      window.dispatchEvent(new Event('rideAccepted'));
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      setError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async (rideId, requestId) => {
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to reject requests');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/requests/${requestId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reject request');
+      }
+
+      const result = await response.json();
+      
+      // Update the ride in the incoming requests list
+      setRequests(prevRequests => {
+        if (!prevRequests || !prevRequests.incoming) {
+          return { incoming: [], sent: [] };
+        }
+        return {
+          ...prevRequests,
+          incoming: prevRequests.incoming.map(ride => {
+            if (ride._id === rideId) {
+              return {
+                ...ride,
+                requests: ride.requests.map(req => 
+                  req._id === requestId ? { ...req, status: 'rejected' } : req
+                )
+              };
+            }
+            return ride;
+          })
+        };
+      });
+
+      // Show success message with rejection style
+      setError(null);
+      setSuccessPopup({ message: 'Request rejected successfully', type: 'rejection' });
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      setError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="dashboard-layout">
@@ -949,7 +1325,7 @@ const Requests = () => {
           </div>
         </div>
 
-        <div className="requests-tabs">
+        <div className="rides-tabs">
           <button 
             className={`tab-button ${activeTab === 'incoming' ? 'active' : ''}`}
             onClick={() => setActiveTab('incoming')}
@@ -964,75 +1340,100 @@ const Requests = () => {
           </button>
         </div>
 
-        {activeTab === 'incoming' && (
-          <div className="requests-section">
-            <h2>Incoming Requests</h2>
-            <p className="section-subtitle">Review and respond to ride requests</p>
-            
-            <div className="requests-list">
-              <div className="request-item">
-                <div className="request-info">
-                  <h3>VIT to Chennai Airport</h3>
-                  <p className="request-date">March 15, 2024 - 9:00 AM</p>
-                  <p className="request-from">From: Harshil Khanna</p>
-                </div>
-                <div className="request-status">
-                  <span className="seats-badge">2 seats requested</span>
-                  <div className="action-buttons">
-                    <button className="accept-btn">Accept</button>
-                    <button className="decline-btn">Decline</button>
-                  </div>
+        {loading ? (
+          <div className="loading">Loading requests...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : (
+          <>
+            {activeTab === 'incoming' && (
+              <div className="requests-section">
+                <h2>Incoming Requests</h2>
+                <p className="section-subtitle">Review and respond to ride requests</p>
+                
+                <div className="requests-list">
+                  {requests.incoming && requests.incoming.map(ride => (
+                    ride.requests && ride.requests.map(request => (
+                      <div key={request._id} className="request-item">
+                        <div className="request-info">
+                          <h3>{ride.from} to {ride.to}</h3>
+                          <p className="request-date">
+                            {new Date(ride.date).toLocaleDateString()} - {ride.time}
+                          </p>
+                          <p className="request-from">From: {request.passenger.name}</p>
+                        </div>
+                        <div className="request-status">
+                          <span className={`status-badge ${request.status}`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                          {request.status === 'pending' && (
+                            <div className="action-buttons">
+                              <button 
+                                className="accept-btn"
+                                onClick={() => handleAccept(ride._id, request._id)}
+                                disabled={isProcessing}
+                              >
+                                {isProcessing ? 'Processing...' : 'Accept'}
+                              </button>
+                              <button 
+                                className="decline-btn"
+                                onClick={() => handleReject(ride._id, request._id)}
+                                disabled={isProcessing}
+                              >
+                                {isProcessing ? 'Processing...' : 'Decline'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ))}
                 </div>
               </div>
+            )}
 
-              <div className="request-item">
-                <div className="request-info">
-                  <h3>Chennai Airport to VIT</h3>
-                  <p className="request-date">March 18, 2024 - 2:00 PM</p>
-                  <p className="request-from">From: Harshil Khanna</p>
-                </div>
-                <div className="request-status">
-                  <span className="seats-badge">1 seat requested</span>
-                  <div className="action-buttons">
-                    <button className="accept-btn">Accept</button>
-                    <button className="decline-btn">Decline</button>
-                  </div>
+            {activeTab === 'sent' && (
+              <div className="requests-section">
+                <h2>Sent Requests</h2>
+                <p className="section-subtitle">Track your ride requests</p>
+                
+                <div className="requests-list">
+                  {requests.sent && requests.sent.map(ride => (
+                    ride.requests && ride.requests.map(request => (
+                      <div key={request._id} className="request-item">
+                        <div className="request-info">
+                          <h3>{ride.from} to {ride.to}</h3>
+                          <p className="request-date">
+                            {new Date(ride.date).toLocaleDateString()} - {ride.time}
+                          </p>
+                          <p className="request-to">To: {ride.driver.name}</p>
+                        </div>
+                        <div className="request-status">
+                          <span className={`status-badge ${request.status}`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                          {request.status === 'pending' && (
+                            <button 
+                              className="cancel-btn"
+                              onClick={() => handleReject(ride._id, request._id)}
+                              disabled={isProcessing}
+                            >
+                              {isProcessing ? 'Processing...' : 'Cancel'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ))}
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
-        {activeTab === 'sent' && (
-          <div className="requests-section">
-            <h2>Sent Requests</h2>
-            <p className="section-subtitle">Track your ride requests</p>
-            
-            <div className="requests-list">
-              <div className="request-item">
-                <div className="request-info">
-                  <h3>VIT to Chennai Airport</h3>
-                  <p className="request-date">March 20, 2024 - 11:00 AM</p>
-                  <p className="request-to">To: Harshil Khanna</p>
-                </div>
-                <div className="request-status">
-                  <span className="status-badge pending">Pending</span>
-                  <button className="cancel-btn">Cancel</button>
-                </div>
-              </div>
-
-              <div className="request-item">
-                <div className="request-info">
-                  <h3>Chennai Airport to VIT</h3>
-                  <p className="request-date">March 22, 2024 - 3:00 PM</p>
-                  <p className="request-to">To: Harshil Khanna</p>
-                </div>
-                <div className="request-status">
-                  <span className="status-badge awaiting">Awaiting Response</span>
-                  <button className="cancel-btn">Cancel</button>
-                </div>
-              </div>
-            </div>
+        {successPopup && (
+          <div className={`success-popup ${successPopup.type === 'rejection' ? 'rejection-popup' : ''}`}>
+            {successPopup.message}
           </div>
         )}
       </main>
