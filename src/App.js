@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, NavLink, useLocation, useNavigate, Navigate } from "react-router-dom";
 import { FaCar, FaBell, FaUser, FaMapMarkerAlt, FaSearch, FaUserFriends, FaCog, FaRegBell, FaEnvelope, FaPhone } from "react-icons/fa";
 import "./App.css";
 import Login from './components/Login';
@@ -118,97 +118,190 @@ const Home = () => {
   );
 };
 
-const FindRide = () => (
-  <div className="find-ride-page">
-    <div className="find-ride-container">
-      <div className="find-ride-content">
-        <h1>Find Your Perfect Ride</h1>
-        <p className="subtitle">Search for rides to your destination or offer a ride to others.</p>
+const FindRide = () => {
+  const [rides, setRides] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [searchParams, setSearchParams] = React.useState({
+    from: '',
+    to: '',
+    date: '',
+    seats: ''
+  });
 
-        <div className="search-form-card">
-          <h2>Search for Rides</h2>
-          
-          <div className="search-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>From</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter departure city"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>To</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter destination city"
-                  className="form-input"
-                />
-              </div>
-            </div>
+  // Fetch available rides
+  const fetchAvailableRides = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view rides');
+      }
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Date</label>
-                <input 
-                  type="text" 
-                  placeholder="dd-mm-yyyy"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Seats</label>
-                <input 
-                  type="number" 
-                  placeholder="Number of seats"
-                  className="form-input"
-                  min="1"
-                />
-              </div>
-            </div>
+      const response = await fetch('http://localhost:5000/api/rides/available', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-            <button className="search-button">
-              <FaSearch />
-              Search Rides
-            </button>
+      if (!response.ok) {
+        throw new Error('Failed to fetch rides');
+      }
+
+      const data = await response.json();
+      setRides(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching rides:', err);
+      setError(err.message || 'Failed to load rides');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAvailableRides();
+  }, []);
+
+  const handleSearchChange = (e) => {
+    const { name, value } = e.target;
+    setSearchParams(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // You can implement search filtering here
+    fetchAvailableRides();
+  };
+
+  return (
+    <div className="find-ride-page">
+      <div className="find-ride-container">
+        <div className="find-ride-content">
+          <h1>Find Your Perfect Ride</h1>
+          <p className="subtitle">Search for rides to your destination or offer a ride to others.</p>
+
+          <div className="search-form-card">
+            <h2>Search for Rides</h2>
+            
+            <form className="search-form" onSubmit={handleSearch}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>From</label>
+                  <input 
+                    type="text" 
+                    name="from"
+                    value={searchParams.from}
+                    onChange={handleSearchChange}
+                    placeholder="Enter departure city"
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>To</label>
+                  <input 
+                    type="text" 
+                    name="to"
+                    value={searchParams.to}
+                    onChange={handleSearchChange}
+                    placeholder="Enter destination city"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date</label>
+                  <input 
+                    type="date"
+                    name="date"
+                    value={searchParams.date}
+                    onChange={handleSearchChange}
+                    className="form-input"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Seats</label>
+                  <input 
+                    type="number" 
+                    name="seats"
+                    value={searchParams.seats}
+                    onChange={handleSearchChange}
+                    placeholder="Number of seats"
+                    className="form-input"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="search-button">
+                <FaSearch />
+                Search Rides
+              </button>
+            </form>
           </div>
         </div>
       </div>
-    </div>
 
-    <div className="available-rides-section">
-      <div className="section-content">
-        <h2>Available Rides</h2>
-        <p className="subtitle">Browse through available rides that match your criteria.</p>
+      <div className="available-rides-section">
+        <div className="section-content">
+          <h2>Available Rides</h2>
+          <p className="subtitle">Browse through available rides that match your criteria.</p>
 
-        <div className="rides-grid">
-          <div className="ride-card">
-            <div className="ride-header">
-              <h3>VIT to Chennai Airport</h3>
-              <span className="status-badge">Available</span>
+          {loading ? (
+            <div className="loading-message">Loading available rides...</div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : rides.length === 0 ? (
+            <div className="no-rides-message">No rides available at the moment.</div>
+          ) : (
+            <div className="rides-grid">
+              {rides.map(ride => (
+                <div key={ride._id} className="ride-card">
+                  <div className="ride-header">
+                    <h3>{ride.from} to {ride.to}</h3>
+                    <span className="status-badge active">Available</span>
+                  </div>
+                  <div className="ride-details">
+                    <div className="detail-item">
+                      <span>Date:</span>
+                      <span>{new Date(ride.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Time:</span>
+                      <span>{ride.time}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Available Seats:</span>
+                      <span>{ride.availableSeats}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Price:</span>
+                      <span>₹{ride.price} per seat</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Vehicle:</span>
+                      <span>{ride.vehicle}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Ride Owner:</span>
+                      <span>{ride.driver.name}</span>
+                    </div>
+                  </div>
+                  <button className="view-details-button">Request to Join</button>
+                </div>
+              ))}
             </div>
-            <div className="ride-details">
-              <div className="detail-item">
-                <span>Departure:</span>
-                <span>May 15, 2025</span>
-              </div>
-              <div className="detail-item">
-                <span>Available Seats:</span>
-                <span>3</span>
-              </div>
-              <div className="detail-item">
-                <span>Price:</span>
-                <span>Rs.390 per seat</span>
-              </div>
-            </div>
-            <button className="view-details-button">View Details</button>
-          </div>
+          )}
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Add SuccessPopup component
 function SuccessPopup({ message, onClose }) {
@@ -315,8 +408,16 @@ function OfferRide() {
       // Show success popup
       setShowSuccess(true);
 
-      // Dispatch event to update dashboard
-      window.dispatchEvent(new Event('rideCreated'));
+      // Reset form
+      setFormData({
+        from: '',
+        to: '',
+        date: '',
+        time: '',
+        seats: '',
+        price: '',
+        vehicle: ''
+      });
 
     } catch (err) {
       console.error('Error creating ride:', err);
@@ -447,7 +548,6 @@ function OfferRide() {
           message="Ride successfully created!" 
           onClose={() => {
             setShowSuccess(false);
-            navigate('/dashboard');
           }} 
         />
       )}
@@ -559,9 +659,6 @@ const Notifications = () => {
       <aside className="dashboard-sidebar">
         <h2 className="sidebar-title">Dashboard</h2>
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className="nav-item">
-            <FaSearch /> Overview
-          </NavLink>
           <NavLink to="/dashboard/my-rides" className="nav-item">
             <FaCar /> My Rides
           </NavLink>
@@ -624,9 +721,6 @@ const Dashboard = () => {
       <aside className="dashboard-sidebar">
         <h2 className="sidebar-title">Dashboard</h2>
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className="nav-item">
-            <FaSearch /> Overview
-          </NavLink>
           <NavLink to="/dashboard/my-rides" className="nav-item">
             <FaCar /> My Rides
           </NavLink>
@@ -762,9 +856,6 @@ const Profile = () => {
       <aside className="dashboard-sidebar">
         <h2 className="sidebar-title">Dashboard</h2>
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className="nav-item">
-            <FaSearch /> Overview
-          </NavLink>
           <NavLink to="/dashboard/my-rides" className="nav-item">
             <FaCar /> My Rides
           </NavLink>
@@ -831,9 +922,6 @@ const Requests = () => {
       <aside className="dashboard-sidebar">
         <h2 className="sidebar-title">Dashboard</h2>
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className="nav-item">
-            <FaSearch /> Overview
-          </NavLink>
           <NavLink to="/dashboard/my-rides" className="nav-item">
             <FaCar /> My Rides
           </NavLink>
@@ -1018,11 +1106,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/find-ride" element={<ProtectedRoute><FindRide /></ProtectedRoute>} />
             <Route path="/offer-ride" element={<ProtectedRoute><OfferRide /></ProtectedRoute>} />
-            <Route path="/my-rides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/my-rides" replace /></ProtectedRoute>} />
+            <Route path="/dashboard/my-rides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
             <Route path="/dashboard/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
             <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

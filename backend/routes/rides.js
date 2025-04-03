@@ -24,7 +24,8 @@ router.get('/available', auth, async (req, res) => {
   try {
     const rides = await Ride.find({ 
       status: 'active',
-      date: { $gte: new Date() }
+      date: { $gte: new Date() },
+      driver: { $ne: req.user.id }
     })
     .populate('driver', 'name')
     .sort({ date: 1 });
@@ -124,6 +125,73 @@ router.patch('/:rideId/request/:requestId', auth, async (req, res) => {
     }
 
     res.json({ message: `Request ${status}` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Cancel a ride
+router.patch('/:rideId/cancel', auth, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.rideId);
+    
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found' });
+    }
+
+    // Verify that the current user is the ride creator
+    if (ride.driver.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to cancel this ride' });
+    }
+
+    // Check if ride is already cancelled
+    if (ride.status === 'cancelled') {
+      return res.status(400).json({ message: 'Ride is already cancelled' });
+    }
+
+    // Update ride status to cancelled
+    ride.status = 'cancelled';
+    await ride.save();
+
+    res.json({ message: 'Ride cancelled successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Edit a ride
+router.patch('/:rideId', auth, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.rideId);
+    
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found' });
+    }
+
+    // Verify that the current user is the ride creator
+    if (ride.driver.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to edit this ride' });
+    }
+
+    // Update only allowed fields
+    const updates = {
+      from: req.body.from,
+      to: req.body.to,
+      date: req.body.date,
+      time: req.body.time,
+      availableSeats: req.body.availableSeats,
+      price: req.body.price,
+      vehicle: req.body.vehicle
+    };
+
+    // Update the ride
+    const updatedRide = await Ride.findByIdAndUpdate(
+      req.params.rideId,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    res.json({ message: 'Ride updated successfully', ride: updatedRide });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
