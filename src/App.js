@@ -964,14 +964,14 @@ const Dashboard = () => {
                 <div className="activity-item">
                   <div className="activity-content">
                     <h4>New ride request</h4>
-                    <p>From: John Doe</p>
+                    <p>From: X</p>
                   </div>
                   <button className="view-btn">View</button>
                 </div>
                 <div className="activity-item">
                   <div className="activity-content">
                     <h4>Ride confirmed</h4>
-                    <p>To: New York</p>
+                    <p>To: Y</p>
                   </div>
                   <button className="view-btn">View</button>
                 </div>
