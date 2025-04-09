@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Ride = require('../models/Ride');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const rideController = require('../controllers/rideController');
 
 // Create a new ride
 router.post('/create', auth, async (req, res) => {
@@ -379,5 +380,7 @@ router.get('/requests', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+router.get('/stats', rideController.getRideStats);
 
 module.exports = router; 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { FaCar, FaUserFriends, FaUser, FaRegBell, FaSearch, FaExclamationTriangle, FaTimes, FaCalendarAlt, FaClock, FaMoneyBillWave, FaArrowRight, FaPlus, FaEdit } from 'react-icons/fa';
+import { FaCar, FaUserFriends, FaUser, FaRegBell, FaSearch, FaExclamationTriangle, FaTimes, FaCalendarAlt, FaClock, FaMoneyBillWave, FaArrowRight, FaPlus, FaEdit, FaChartPie } from 'react-icons/fa';
 import { FaTicketAlt } from 'react-icons/fa';
 import './MyRides.css';
 
@@ -222,7 +222,6 @@ const MyRides = () => {
 
       // Show success message
       setError(null);
-      setSuccessMessage('Ride cancelled successfully');
       setSuccessMessage('Ride successfully cancelled');
       // Refresh the rides list
       await fetchRides();
@@ -324,6 +323,9 @@ const MyRides = () => {
             <NavLink to="/dashboard/notifications" className="nav-item">
               <FaRegBell /> Notifications
             </NavLink>
+            <NavLink to="/dashboard/statistics" className="nav-item">
+              <FaChartPie /> Statistics
+            </NavLink>
           </nav>
         </aside>
         <main className="dashboard-main">
@@ -351,6 +353,9 @@ const MyRides = () => {
             <NavLink to="/dashboard/notifications" className="nav-item">
               <FaRegBell /> Notifications
             </NavLink>
+            <NavLink to="/dashboard/statistics" className="nav-item">
+              <FaChartPie /> Statistics
+            </NavLink>
           </nav>
         </aside>
         <main className="dashboard-main">
@@ -376,6 +381,9 @@ const MyRides = () => {
           </NavLink>
           <NavLink to="/dashboard/notifications" className="nav-item">
             <FaRegBell /> Notifications
+          </NavLink>
+          <NavLink to="/dashboard/statistics" className="nav-item">
+            <FaChartPie /> Statistics
           </NavLink>
         </nav>
       </aside>

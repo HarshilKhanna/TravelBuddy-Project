@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, useLocation, useNavigate, Navigate } from "react-router-dom";
-import { FaCar, FaBell, FaUser, FaMapMarkerAlt, FaSearch, FaUserFriends, FaCog, FaRegBell, FaEnvelope, FaPhone, FaEdit, FaTimes } from "react-icons/fa";
+import { FaCar, FaBell, FaUser, FaMapMarkerAlt, FaSearch, FaUserFriends, FaCog, FaRegBell, FaEnvelope, FaPhone, FaEdit, FaTimes, FaChartPie } from "react-icons/fa";
 import "./App.css";
 import Login from './components/Login';
 import Register from './components/Register';
 import MyRides from './components/MyRides';
+import Statistics from './components/Dashboard/Statistics';
 
 // Add ProtectedRoute component at the top
 const ProtectedRoute = ({ children }) => {
@@ -818,6 +819,9 @@ const Notifications = () => {
           <NavLink to="/dashboard/notifications" className="nav-item">
             <FaRegBell /> Notifications
           </NavLink>
+          <NavLink to="/dashboard/statistics" className="nav-item">
+            <FaChartPie /> Statistics
+          </NavLink>
         </nav>
       </aside>
 
@@ -888,6 +892,9 @@ const Dashboard = () => {
           </NavLink>
           <NavLink to="/dashboard/notifications" className="nav-item">
             <FaRegBell /> Notifications
+          </NavLink>
+          <NavLink to="/dashboard/statistics" className="nav-item">
+            <FaChartPie /> Statistics
           </NavLink>
         </nav>
       </aside>
@@ -1023,6 +1030,9 @@ const Profile = () => {
           </NavLink>
           <NavLink to="/dashboard/notifications" className="nav-item">
             <FaRegBell /> Notifications
+          </NavLink>
+          <NavLink to="/dashboard/statistics" className="nav-item">
+            <FaChartPie /> Statistics
           </NavLink>
         </nav>
       </aside>
@@ -1310,6 +1320,9 @@ const Requests = () => {
           <NavLink to="/dashboard/notifications" className="nav-item">
             <FaRegBell /> Notifications
           </NavLink>
+          <NavLink to="/dashboard/statistics" className="nav-item">
+            <FaChartPie /> Statistics
+          </NavLink>
         </nav>
       </aside>
 
@@ -1514,6 +1527,7 @@ function App() {
             <Route path="/dashboard/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
             <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/dashboard/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />
