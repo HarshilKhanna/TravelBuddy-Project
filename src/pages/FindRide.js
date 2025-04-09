@@ -29,7 +29,8 @@ function FindRide() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch rides');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch rides');
       }
 
       const data = await response.json();
@@ -47,7 +48,7 @@ function FindRide() {
       setError(null);
     } catch (err) {
       console.error('Error fetching rides:', err);
-      setError('Failed to load rides. Please try again later.');
+      setError(err.message || 'Failed to load rides. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +87,7 @@ function FindRide() {
       setError(null);
     } catch (err) {
       console.error('Error requesting ride:', err);
-      setError(err.message || 'An error occurred while requesting the ride');
+      setError(err.message || 'Failed to request ride. Please check your connection and try again.');
     }
   };
 

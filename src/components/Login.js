@@ -41,10 +41,11 @@ const Login = () => {
         
         navigate('/dashboard');
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || 'Login failed. Please check your credentials and try again.');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      console.error('Login error:', err);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 

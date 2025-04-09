@@ -101,10 +101,11 @@ const Register = () => {
         
         navigate('/dashboard');
       } else {
-        setError(data.message || 'Registration failed');
+        setError(data.message || 'Registration failed. Please check your information and try again.');
       }
     } catch (err) {
-      setError('An error occurred during registration');
+      console.error('Registration error:', err);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 
