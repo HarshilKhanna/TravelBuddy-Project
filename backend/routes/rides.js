@@ -27,7 +27,16 @@ router.get('/available', auth, async (req, res) => {
     const rides = await Ride.find({ 
       status: 'active',
       date: { $gte: new Date() },
-      driver: { $ne: req.user.id }
+      driver: { $ne: req.user.id },
+      // GUARD: exclude rides the user has already requested (pending or accepted)
+      'requests': {
+        $not: {
+          $elemMatch: {
+            passenger: req.user.id,
+            status: { $in: ['pending', 'accepted'] }
+          }
+        }
+      }
     })
     .populate('driver', 'name')
     .sort({ date: 1 });
@@ -80,6 +89,14 @@ router.post('/:rideId/request', auth, async (req, res) => {
     // Check if there are available seats
     if (ride.availableSeats <= 0) {
       return res.status(400).json({ message: 'No seats available' });
+    }
+
+    // GUARD: prevent duplicate requests from the same passenger
+    const existingRequest = ride.requests.find(
+      r => r.passenger.toString() === req.user.id && (r.status === 'pending' || r.status === 'accepted')
+    );
+    if (existingRequest) {
+      return res.status(400).json({ message: 'You have already requested this ride' });
     }
 
     // Add the request
@@ -141,9 +158,10 @@ router.post('/:rideId/requests/:requestId/accept', auth, async (req, res) => {
     }
 
     console.log("Step 5: Checking request status");
-    if (request.status === 'accepted') {
-      console.log("Error: Request already accepted");
-      return res.status(400).json({ message: 'Request is already accepted' });
+    // GUARD: only pending requests can be accepted (idempotent — blocks re-accept and accept-after-reject)
+    if (request.status !== 'pending') {
+      console.log("Error: Request already processed, status:", request.status);
+      return res.status(400).json({ message: `Request is already ${request.status}` });
     }
 
     console.log("Step 6: Checking seat availability");
