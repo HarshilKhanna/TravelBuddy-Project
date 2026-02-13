@@ -156,7 +156,7 @@ const MyRides = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/rides/my-rides', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/my-rides', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -206,7 +206,7 @@ const MyRides = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideToCancel._id}/cancel`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideToCancel._id}/cancel`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -254,7 +254,7 @@ const MyRides = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideToEdit._id}`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideToEdit._id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -273,7 +273,7 @@ const MyRides = () => {
       // Update the rides list with the updated ride
       setRides(prevRides => ({
         ...prevRides,
-        offered: prevRides.offered.map(ride => 
+        offered: prevRides.offered.map(ride =>
           ride._id === rideToEdit._id ? data.ride : ride
         )
       }));
@@ -401,13 +401,13 @@ const MyRides = () => {
         </div>
 
         <div className="rides-tabs">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'offered' ? 'active' : ''}`}
             onClick={() => setActiveTab('offered')}
           >
             Rides Offered
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'booked' ? 'active' : ''}`}
             onClick={() => setActiveTab('booked')}
           >
@@ -419,7 +419,7 @@ const MyRides = () => {
           <div className="rides-section">
             <h2>Rides You've Offered</h2>
             <p className="section-subtitle">Manage the rides you're offering to others</p>
-            
+
             {rides.offered.length === 0 ? (
               <div className="no-rides">
                 <p>You haven't offered any rides yet.</p>
@@ -438,20 +438,20 @@ const MyRides = () => {
                     </div>
                     <div className="ride-status">
                       <span className={`status-badge ${ride.status}`}>{formatStatus(ride.status)}</span>
-                      <div className="action-buttons">
-                        <button 
+                      {ride.status !== 'cancelled' && <div className="action-buttons">
+                        <button
                           className="edit-btn"
                           onClick={() => handleEditClick(ride)}
                         >
                           <FaEdit /> Edit
                         </button>
-                        <button 
+                        <button
                           className="cancel-btn"
                           onClick={() => handleCancelClick(ride)}
                         >
                           <FaTimes /> Cancel
                         </button>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 ))}
@@ -464,7 +464,7 @@ const MyRides = () => {
           <div className="rides-section">
             <h2>Rides You've Booked</h2>
             <p className="section-subtitle">View and manage your booked rides</p>
-            
+
             {rides.booked.length === 0 ? (
               <div className="no-rides">
                 <p>You haven't booked any rides yet.</p>

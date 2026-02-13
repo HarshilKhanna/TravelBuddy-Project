@@ -88,7 +88,7 @@ const Home = () => {
       <div className="how-it-works-section">
         <h2>How It Works</h2>
         <p className="subtitle">Connect with fellow students for shared rides in just a few simple steps</p>
-        
+
         <div className="steps-container">
           <div className="step-card">
             <div className="step-icon">
@@ -140,7 +140,7 @@ const FindRide = () => {
       }
 
       // Fetch available rides
-      const ridesResponse = await fetch('http://localhost:5000/api/rides/available', {
+      const ridesResponse = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/available', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -153,7 +153,7 @@ const FindRide = () => {
       const ridesData = await ridesResponse.json();
 
       // Fetch user's sent requests
-      const requestsResponse = await fetch('http://localhost:5000/api/rides/requests', {
+      const requestsResponse = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/requests', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -164,18 +164,18 @@ const FindRide = () => {
       }
 
       const requestsData = await requestsResponse.json();
-      
+
       // Get IDs of rides that user has already requested or been rejected from
       const requestedRideIds = new Set(
         requestsData.sent
-          .filter(ride => ride.requests.some(req => 
+          .filter(ride => ride.requests.some(req =>
             req.status === 'pending' || req.status === 'rejected'
           ))
           .map(ride => ride._id)
       );
 
       // Filter out rides with 0 seats and rides that user has already requested or been rejected from
-      const availableRides = ridesData.filter(ride => 
+      const availableRides = ridesData.filter(ride =>
         ride.availableSeats > 0 && !requestedRideIds.has(ride._id)
       );
 
@@ -197,7 +197,7 @@ const FindRide = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/request`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideId}/request`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -247,13 +247,13 @@ const FindRide = () => {
 
           <div className="search-form-card">
             <h2>Search for Rides</h2>
-            
+
             <form className="search-form" onSubmit={handleSearch}>
               <div className="form-row">
                 <div className="form-group">
                   <label>From</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="from"
                     value={searchParams.from}
                     onChange={handleSearchChange}
@@ -263,8 +263,8 @@ const FindRide = () => {
                 </div>
                 <div className="form-group">
                   <label>To</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="to"
                     value={searchParams.to}
                     onChange={handleSearchChange}
@@ -277,7 +277,7 @@ const FindRide = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Date</label>
-                  <input 
+                  <input
                     type="date"
                     name="date"
                     value={searchParams.date}
@@ -288,8 +288,8 @@ const FindRide = () => {
                 </div>
                 <div className="form-group">
                   <label>Seats</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     name="seats"
                     value={searchParams.seats}
                     onChange={handleSearchChange}
@@ -354,7 +354,7 @@ const FindRide = () => {
                       <span>{ride.driver.name}</span>
                     </div>
                   </div>
-                  <button 
+                  <button
                     className="view-details-button"
                     onClick={() => handleRequestRide(ride._id)}
                   >
@@ -427,7 +427,7 @@ function OfferRide() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -455,7 +455,7 @@ function OfferRide() {
         vehicle: formData.vehicle
       };
 
-      const response = await fetch('http://localhost:5000/api/rides/create', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -498,13 +498,13 @@ function OfferRide() {
     <div className="offer-ride-container">
       <h1 className="offer-ride-title">Offer a Ride</h1>
       <p className="offer-ride-subtitle">Share your journey with others</p>
-      
+
       <div className="ride-details-card">
         <h2 className="ride-details-title">Ride Details</h2>
         <p className="ride-details-subtitle">Fill in the details of your ride</p>
 
         {error && <div className="error-message">{error}</div>}
-        
+
         <form className="ride-form" onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
@@ -600,9 +600,9 @@ function OfferRide() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="submit-button" 
+          <button
+            type="submit"
+            className="submit-button"
             disabled={loading}
           >
             {loading ? 'Creating Ride...' : 'Create Ride'}
@@ -611,11 +611,11 @@ function OfferRide() {
       </div>
 
       {showSuccess && (
-        <SuccessPopup 
-          message="Ride successfully created!" 
+        <SuccessPopup
+          message="Ride successfully created!"
           onClose={() => {
             setShowSuccess(false);
-          }} 
+          }}
         />
       )}
     </div>
@@ -643,7 +643,7 @@ const Navigation = () => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      
+
       if (token && userData) {
         setIsAuthenticated(true);
         setUser(JSON.parse(userData));
@@ -695,7 +695,7 @@ const Navigation = () => {
               <FaBell />
               <span className="notification-dot"></span>
             </button>
-            <div 
+            <div
               className="profile-dropdown"
               onMouseEnter={() => setIsDropdownOpen(true)}
               onMouseLeave={() => setIsDropdownOpen(false)}
@@ -729,7 +729,7 @@ const Notifications = () => {
 
   const fetchNotifications = React.useCallback(async () => {
     if (isFetching || isDeleting) return;
-    
+
     try {
       setIsFetching(true);
       const token = localStorage.getItem('token');
@@ -737,7 +737,7 @@ const Notifications = () => {
         throw new Error('Please login to view notifications');
       }
 
-      const response = await fetch('http://localhost:5000/api/notifications', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/notifications', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -761,7 +761,7 @@ const Notifications = () => {
 
   const markAsRead = async (notificationId) => {
     if (isDeleting) return;
-    
+
     try {
       setIsDeleting(true);
       const token = localStorage.getItem('token');
@@ -769,7 +769,7 @@ const Notifications = () => {
         throw new Error('Please login to mark notifications as read');
       }
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -782,10 +782,10 @@ const Notifications = () => {
       }
 
       // Remove the notification from the state immediately
-      setNotifications(prevNotifications => 
+      setNotifications(prevNotifications =>
         prevNotifications.filter(notification => notification._id !== notificationId)
       );
-      
+
       setError(null);
     } catch (err) {
       console.error('Error marking notification as read:', err);
@@ -837,7 +837,7 @@ const Notifications = () => {
 
         <div className="notifications-card">
           <h2>Recent Notifications</h2>
-          
+
           {loading ? (
             <div className="loading">Loading notifications...</div>
           ) : error ? (
@@ -858,7 +858,7 @@ const Notifications = () => {
                       {new Date(notification.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <button 
+                  <button
                     className={`view-btn ${isDeleting ? 'disabled' : ''}`}
                     onClick={() => markAsRead(notification._id)}
                     disabled={isDeleting}
@@ -1096,7 +1096,7 @@ const Requests = () => {
         throw new Error('Please login to view requests');
       }
 
-      const response = await fetch('http://localhost:5000/api/rides/requests', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/requests', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1125,7 +1125,7 @@ const Requests = () => {
       }
 
       // Fetch available rides
-      const ridesResponse = await fetch('http://localhost:5000/api/rides/available', {
+      const ridesResponse = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/available', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1138,7 +1138,7 @@ const Requests = () => {
       const ridesData = await ridesResponse.json();
 
       // Fetch user's sent requests
-      const requestsResponse = await fetch('http://localhost:5000/api/rides/requests', {
+      const requestsResponse = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/requests', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1149,18 +1149,18 @@ const Requests = () => {
       }
 
       const requestsData = await requestsResponse.json();
-      
+
       // Get IDs of rides that user has already requested or been rejected from
       const requestedRideIds = new Set(
         requestsData.sent
-          .filter(ride => ride.requests.some(req => 
+          .filter(ride => ride.requests.some(req =>
             req.status === 'pending' || req.status === 'rejected'
           ))
           .map(ride => ride._id)
       );
 
       // Filter out rides with 0 seats and rides that user has already requested or been rejected from
-      const availableRides = ridesData.filter(ride => 
+      const availableRides = ridesData.filter(ride =>
         ride.availableSeats > 0 && !requestedRideIds.has(ride._id)
       );
 
@@ -1187,7 +1187,7 @@ const Requests = () => {
         throw new Error('Please login to accept requests');
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/requests/${requestId}/accept`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideId}/requests/${requestId}/accept`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1201,7 +1201,7 @@ const Requests = () => {
       }
 
       const result = await response.json();
-      
+
       // Update the ride in the incoming requests list
       setRequests(prevRequests => {
         if (!prevRequests || !prevRequests.incoming) {
@@ -1213,7 +1213,7 @@ const Requests = () => {
             if (ride._id === rideId) {
               return {
                 ...ride,
-                requests: ride.requests.map(req => 
+                requests: ride.requests.map(req =>
                   req._id === requestId ? { ...req, status: 'accepted' } : req
                 )
               };
@@ -1256,7 +1256,7 @@ const Requests = () => {
         throw new Error('Please login to reject requests');
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/requests/${requestId}/reject`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideId}/requests/${requestId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1270,7 +1270,7 @@ const Requests = () => {
       }
 
       const result = await response.json();
-      
+
       // Update the ride in the incoming requests list
       setRequests(prevRequests => {
         if (!prevRequests || !prevRequests.incoming) {
@@ -1282,7 +1282,7 @@ const Requests = () => {
             if (ride._id === rideId) {
               return {
                 ...ride,
-                requests: ride.requests.map(req => 
+                requests: ride.requests.map(req =>
                   req._id === requestId ? { ...req, status: 'rejected' } : req
                 )
               };
@@ -1339,13 +1339,13 @@ const Requests = () => {
         </div>
 
         <div className="rides-tabs">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'incoming' ? 'active' : ''}`}
             onClick={() => setActiveTab('incoming')}
           >
             Incoming Requests
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'sent' ? 'active' : ''}`}
             onClick={() => setActiveTab('sent')}
           >
@@ -1363,7 +1363,7 @@ const Requests = () => {
               <div className="requests-section">
                 <h2>Incoming Requests</h2>
                 <p className="section-subtitle">Review and respond to ride requests</p>
-                
+
                 <div className="requests-list">
                   {requests.incoming && requests.incoming.map(ride => (
                     ride.requests && ride.requests.map(request => (
@@ -1381,14 +1381,14 @@ const Requests = () => {
                           </span>
                           {request.status === 'pending' && (
                             <div className="action-buttons">
-                              <button 
+                              <button
                                 className="accept-btn"
                                 onClick={() => handleAccept(ride._id, request._id)}
                                 disabled={isProcessing}
                               >
                                 {isProcessing ? 'Processing...' : 'Accept'}
                               </button>
-                              <button 
+                              <button
                                 className="decline-btn"
                                 onClick={() => handleReject(ride._id, request._id)}
                                 disabled={isProcessing}
@@ -1409,7 +1409,7 @@ const Requests = () => {
               <div className="requests-section">
                 <h2>Sent Requests</h2>
                 <p className="section-subtitle">Track your ride requests</p>
-                
+
                 <div className="requests-list">
                   {requests.sent && requests.sent.map(ride => (
                     ride.requests && ride.requests.map(request => (
@@ -1426,7 +1426,7 @@ const Requests = () => {
                             {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                           </span>
                           {request.status === 'pending' && (
-                            <button 
+                            <button
                               className="cancel-btn"
                               onClick={() => handleReject(ride._id, request._id)}
                               disabled={isProcessing}
@@ -1508,8 +1508,8 @@ function App() {
   return (
     <BrowserRouter>
       <div className="App">
-        <Navigation 
-          isAuthenticated={isAuthenticated} 
+        <Navigation
+          isAuthenticated={isAuthenticated}
           user={user}
           showDropdown={showDropdown}
           setShowDropdown={setShowDropdown}

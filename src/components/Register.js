@@ -46,7 +46,7 @@ const Register = () => {
 
       const data = await response.json();
       console.log('Email validation response:', data); // For debugging
-      
+
       // Check if the email actually exists
       if (data.deliverability === "UNDELIVERABLE" || data.deliverability === "UNKNOWN") {
         setEmailError('This email address does not exist. Please use your actual VIT email.');
@@ -82,7 +82,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,10 +95,10 @@ const Register = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Dispatch auth change event
         window.dispatchEvent(new Event('authChange'));
-        
+
         navigate('/dashboard');
       } else {
         setError(data.message || 'Registration failed. Please check your information and try again.');
@@ -114,9 +114,9 @@ const Register = () => {
       <div className="auth-card">
         <h2>Create Account</h2>
         <p className="auth-subtitle">Join TravelBuddy today</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <div className="input-icon">
@@ -131,7 +131,7 @@ const Register = () => {
               />
             </div>
           </div>
-          
+
           <div className="form-group">
             <div className="input-icon">
               <FaEnvelope />
@@ -147,7 +147,7 @@ const Register = () => {
             </div>
             {emailError && <div className="field-error">{emailError}</div>}
           </div>
-          
+
           <div className="form-group">
             <div className="input-icon">
               <FaLock />
@@ -162,7 +162,7 @@ const Register = () => {
               />
             </div>
           </div>
-          
+
           <div className="form-group">
             <div className="input-icon">
               <FaPhone />
@@ -178,16 +178,16 @@ const Register = () => {
               />
             </div>
           </div>
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             className="auth-button"
             disabled={isValidating}
           >
             {isValidating ? 'Validating...' : 'Create Account'}
           </button>
         </form>
-        
+
         <div className="auth-footer">
           Already have an account? <Link to="/login" className="auth-link">Login</Link>
         </div>

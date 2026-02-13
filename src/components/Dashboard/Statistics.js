@@ -21,7 +21,7 @@ const Statistics = () => {
   useEffect(() => {
     const fetchRideStats = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/rides/stats');
+        const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/stats');
         if (!response.ok) {
           throw new Error('Failed to fetch ride statistics');
         }

@@ -22,7 +22,7 @@ function FindRide() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/rides/available', {
+      const response = await fetch('https://travelbuddy-project-f1gm.onrender.com/api/rides/available', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -35,7 +35,7 @@ function FindRide() {
 
       const data = await response.json();
       setRides(data);
-      
+
       // Check which rides the user has already requested
       const requestedIds = new Set();
       data.forEach(ride => {
@@ -44,7 +44,7 @@ function FindRide() {
         }
       });
       setRequestedRides(requestedIds);
-      
+
       setError(null);
     } catch (err) {
       console.error('Error fetching rides:', err);
@@ -66,7 +66,7 @@ function FindRide() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/rides/${rideId}/request`, {
+      const response = await fetch(`https://travelbuddy-project-f1gm.onrender.com/api/rides/${rideId}/request`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -95,13 +95,13 @@ function FindRide() {
     e.preventDefault();
     // Filter rides based on search parameters
     const filteredRides = rides.filter(ride => {
-      const matchesFrom = !searchParams.from || 
+      const matchesFrom = !searchParams.from ||
         ride.from.toLowerCase().includes(searchParams.from.toLowerCase());
-      const matchesTo = !searchParams.to || 
+      const matchesTo = !searchParams.to ||
         ride.to.toLowerCase().includes(searchParams.to.toLowerCase());
-      const matchesDate = !searchParams.date || 
+      const matchesDate = !searchParams.date ||
         new Date(ride.date).toISOString().split('T')[0] === searchParams.date;
-      
+
       return matchesFrom && matchesTo && matchesDate;
     });
     setRides(filteredRides);
@@ -118,7 +118,7 @@ function FindRide() {
   return (
     <div className="page-container">
       <h1>Find a Ride</h1>
-      
+
       <div className="search-section">
         <form onSubmit={handleSearch} className="search-form">
           <div className="form-group">
@@ -187,7 +187,7 @@ function FindRide() {
                   <span>{ride.vehicle}</span>
                 </div>
               </div>
-              <button 
+              <button
                 className={`request-button ${requestedRides.has(ride._id) ? 'disabled' : ''}`}
                 onClick={() => handleRequestRide(ride._id)}
                 disabled={requestedRides.has(ride._id)}

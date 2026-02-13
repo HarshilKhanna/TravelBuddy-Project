@@ -1,6 +1,6 @@
 import axiosInstance from '../utils/axiosConfig';
 
-const API_URL = 'http://localhost:5000/api/auth/';
+const API_URL = 'https://travelbuddy-project-f1gm.onrender.com/api/auth/';
 
 const register = async (username, email, password) => {
   const response = await axiosInstance.post(API_URL + 'register', {
@@ -43,7 +43,7 @@ const refreshToken = async () => {
     const response = await axiosInstance.post(API_URL + 'refresh-token', {
       token: user.token
     });
-    
+
     if (response.data.token) {
       const updatedUser = { ...user, token: response.data.token };
       localStorage.setItem('user', JSON.stringify(updatedUser));
