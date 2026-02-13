@@ -3,7 +3,7 @@ import authService from '../services/authService';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://travelbuddy-project-f1gm.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
